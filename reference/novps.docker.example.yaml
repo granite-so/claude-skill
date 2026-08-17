@@ -1,3 +1,12 @@
+# Deploy a pre-built image (the one your CI already pushes).
+#
+# Registry credentials: leave `credentials: ''` here — the field is only read
+# when the resource is CREATED, and secrets don't belong in a committed file.
+# After the first apply:
+#   novps resources set-image <resource_id> --docker-credentials "$DOCKER_USER:$DOCKER_TOKEN"
+#   novps resources deploy <resource_id>
+# See reference/registry-credentials.md.
+
 envs:
   - key: LOG_LEVEL
     value: info
@@ -37,4 +46,5 @@ resources:
       type: sm
       count: 1
     envs: []
-    volumes: []
+    volumes:                    # omit the key entirely to leave an existing volume untouched;
+      - path: /var/lib/app      # `volumes: []` DETACHES it
