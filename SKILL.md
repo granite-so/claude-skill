@@ -356,6 +356,8 @@ Default tag strategy: `latest` for a first deploy, `$(git rev-parse --short HEAD
 
 | Intent | Command |
 |---|---|
+| What happened to the app (crashes, OOM, failing healthchecks, deploys) | `novps apps events <app-id> --since 1h` |
+| Watch events live | `novps apps events <app-id> -f` |
 | Tail logs | `novps resources logs <resource-id> -f --since 10m` |
 | Search logs | `novps resources logs <resource-id> --since 1h --search "error"` |
 | Logs for one pod | `novps resources logs <resource-id> --pod <pod-name>` |
@@ -365,7 +367,7 @@ Default tag strategy: `latest` for a first deploy, `$(git rev-parse --short HEAD
 | Port-forward a resource | `novps port-forward resource <resource-id> <remote-port> [-l <local-port>]` |
 | Port-forward a database | `novps port-forward database <database-id> [-l <local-port>]` |
 
-When debugging "why is X broken", default to: `resources get` → `resources logs --since 15m --search error` → offer `resources connect` if the user wants to poke inside.
+When debugging "why is X broken", default to: `apps events --since 1h` (it names the failure: OOM with the memory limit, crash loop, healthcheck status code, image pull error) → `resources get` → `resources logs --since 15m --search error` → offer `resources connect` if the user wants to poke inside. An `(ongoing)` event is still open; an OOM kill means raising the replica size, not reading logs.
 
 **Image-pull failures** (`ImagePullBackOff`, `401`, `manifest unknown`) are not app bugs — check, in order: the tag exists in the registry (`docker manifest inspect`), the image is private (needs credentials), the stored credential is stale (rotate via `set-image --docker-credentials`).
 
@@ -428,8 +430,8 @@ For destructive ops (`delete`, `resize`, `set-access`), always show the user wha
 2. `novps resources logs <id> -f --since 2m` — watch for pull errors.
 
 **"Something's broken in prod"**:
-1. `novps apps resources <app-id>` → find unhealthy resource.
-2. `novps resources get <id>` → status, recent events.
+1. `novps apps events <app-id> --since 1h` → which resource, what failed and whether it is still `(ongoing)`.
+2. `novps resources get <id>` → status.
 3. `novps resources logs <id> --since 15m --search error`.
 4. Offer `novps resources connect <id>` for deeper debugging.
 
